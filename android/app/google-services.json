@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "149250338687",
+    "project_id": "bancomovimentacao",
+    "storage_bucket": "bancomovimentacao.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:149250338687:android:55a2df35abc3f7925ff44a",
+        "android_client_info": {
+          "package_name": "com.example.projeto"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7MUrHPAakS6lfXJiObYJ0GsCh_0RPjYs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
