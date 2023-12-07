@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       child: MaterialApp(
-        title: "",
+        title: "projeto",
         home: NavigationBarApp(),
       ),
     );

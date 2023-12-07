@@ -1,33 +1,35 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
+import 'package:projeto/routes/navigationbarapp.dart';
 
-class Formulario extends StatelessWidget {
+Future CreateUser({required String descricao}) async {
+  final docUser = FirebaseFirestore.instance.collection('users').doc();
+
+  final user = User(
+      id: docUser.id,
+      descricao: descricao,
+      valor: valor,
+      selectedOption: selectedOption);
+
+  final json = user.toJson();
+  await docUser.set(json);
+}
+
+class User {
+  String id;
   final String descricao;
-  final int valor;
+  final double valor;
+  final String selectedOption;
 
-  const Formulario(this.descricao, this.valor, {super.key});
+  User(
+      {this.id = '',
+      required this.descricao,
+      required this.valor,
+      required this.selectedOption});
 
-  @override
-  Widget build(BuildContext context) {
-    // Create a CollectionReference called users that references the firestore collection
-    CollectionReference user = FirebaseFirestore.instance.collection('user');
-
-    Future<void> Formulario() {
-      // Call the user's CollectionReference to add a new user
-      return user
-          .add({
-            'descricao': descricao,
-            'valor': valor,
-          })
-          .then((value) => print("User Added"))
-          .catchError((error) => print("Failed to add user: $error"));
-    }
-
-    return TextButton(
-      onPressed: Formulario,
-      child: const Text(
-        "Add User",
-      ),
-    );
-  }
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'descricao': descricao,
+        'valor': valor,
+        'selectedOption': selectedOption
+      };
 }

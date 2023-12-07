@@ -1,20 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:projeto/widgets/bsiglechoice.dart';
+import 'package:projeto/widgets/escrita.dart';
 
 var textEditingController = TextEditingController(text: " ");
 var singleChoice = const SingleChoice();
 final formKey = GlobalKey<FormState>();
 
+String selectedOption = "Entrada";
+var name = '';
 var descricao = '';
-var valor = '';
-var saldo = '';
+var valor = 0.0;
+var saldo = 0.0;
 var contador = 0;
-
-final descricaoadd = <String>[];
-final valoradd = <String>[];
-
-CollectionReference user = FirebaseFirestore.instance.collection('user');
 
 class NavigationBarApp extends StatelessWidget {
   NavigationBarApp({super.key});
@@ -30,6 +28,31 @@ class NavigationBarApp extends StatelessWidget {
   }
 }
 
+class SaldoWidget extends StatelessWidget {
+  final double saldo;
+
+  SaldoWidget({required this.saldo});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Saldo Atual:',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          Text(
+            'R\$ ${saldo.toStringAsFixed(2)}', // Formatando para exibir duas casas decimais
+            style: Theme.of(context).textTheme.displaySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class NavigationExample extends StatefulWidget {
   const NavigationExample({super.key});
 
@@ -39,6 +62,8 @@ class NavigationExample extends StatefulWidget {
 
 class _NavigationExampleState extends State<NavigationExample> {
   int currentPageIndex = 0;
+  var controllerdescricao = TextEditingController();
+  var controllervalor = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -63,10 +88,8 @@ class _NavigationExampleState extends State<NavigationExample> {
             label: 'REGISTROS',
           ),
           NavigationDestination(
-            icon: Badge(
-              child: Icon(Icons.track_changes),
-            ),
-            label: 'METAS',
+            icon: Badge(child: Icon(Icons.account_balance_wallet)),
+            label: 'SALDO',
           ),
         ],
       ),
@@ -91,7 +114,10 @@ class _NavigationExampleState extends State<NavigationExample> {
                         runSpacing: 100,
                         children: [
                           TextFormField(
+                              controller: controllerdescricao =
+                                  TextEditingController(),
                               decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
                                   labelText: "Descrição",
                                   hintText: "Digite uma descrição"),
                               validator: (value) {
@@ -103,51 +129,99 @@ class _NavigationExampleState extends State<NavigationExample> {
                                 return null;
                               }),
                           TextFormField(
+                            controller: controllervalor =
+                                TextEditingController(),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
                             decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
                                 labelText: "Valor",
                                 hintText: "Digite um Valor"),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return "Insira um valor";
                               } else {
-                                valor = value;
+                                try {
+                                  valor = double.parse(value);
+                                  // Validar se o valor é um número válido
+                                  if (valor.isNaN || valor.isInfinite) {
+                                    throw const FormatException();
+                                  }
+                                  return null;
+                                } catch (e) {
+                                  // Se não puder ser convertido para double, mostrar aviso.
+                                  return "Insira um valor numérico válido";
+                                }
                               }
-                              return null;
                             },
                           ),
-                          const SingleChoice(),
-                          Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // Validate returns true if the form is valid, or false otherwise.
+                          Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(
+                                    8.0), // Ajuste o valor conforme necessário
+                                border: Border.all(
+                                    color: const Color.fromARGB(255, 255, 255,
+                                        255)), // Adicione uma borda se desejar
+                              ),
+                              child: DropdownButton<String>(
+                                icon: const Icon(Icons.arrow_downward),
+                                value: selectedOption,
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    selectedOption = newValue!;
+                                  });
+                                },
+                                items: <String>['Entrada', 'Saida']
+                                    .map((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(value),
+                                  );
+                                }).toList(),
+                              )),
+                          const SizedBox(height: 18),
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(30),
+                              child: ElevatedButton(
+                                style: const ButtonStyle(
+                                    backgroundColor:
+                                        MaterialStatePropertyAll<Color>(
+                                            Colors.green)),
+                                onPressed: () async {
+                                  // Validate returns true if the form is valid, or false otherwise.
 
-                                // ignore: avoid_print
-                                formKey.currentState?.save();
-                                formKey.currentState!.context;
+                                  // ignore: avoid_print
+                                  formKey.currentState?.save();
+                                  formKey.currentState!.context;
 
-                                if (formKey.currentState!.validate()) {
-                                  // If the form is valid, display a snackbar. In the real world,
-                                  // you'd often call a server or save the information in a database.
-                                }
+                                  if (formKey.currentState!.validate()) {
+                                    // If the form is valid, display a snackbar. In the real world,
+                                    // you'd often call a server or save the information in a database.
+                                    final user = User(
+                                        descricao: descricao,
+                                        valor: valor,
+                                        selectedOption: selectedOption);
+                                    await CreateUser(descricao: user.descricao);
 
-                                contador = contador + 1;
-                                print(descricaoadd);
-                                print(valoradd);
-                                print(contador);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        backgroundColor: Colors.cyan,
+                                        content: Text('Registrado'),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                    if (user.selectedOption == 'Entrada') {
+                                      saldo += user.valor;
+                                    } else if (user.selectedOption == 'Saida') {
+                                      saldo -= user.valor;
+                                    }
 
-                                user
-                                    .add({
-                                      'descricao': descricao,
-                                      'valor': valor
-                                    })
-                                    .then(
-                                        (value) => print('Produto adicionado'))
-                                    .catchError(
-                                        // ignore: avoid_print
-                                        (error) => print('falaha erro $error'));
-                              },
-                              child: const Text('Enviar'),
+                                    formKey.currentState?.reset();
+                                  }
+                                },
+                                child: const Text('ENVIAR'),
+                              ),
                             ),
                           ),
                         ],
@@ -160,66 +234,63 @@ class _NavigationExampleState extends State<NavigationExample> {
           ),
 
           /// Notifications page
-          const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Column(
-              children: <Widget>[
-                Card(
-                  child: ListTile(
-                    leading: Icon(Icons.swap_horiz),
-                    title: Text('Registro 1'),
-                    subtitle: Text("Entrada no valor de R\$ 500"),
-                  ),
-                ),
-                Card(
-                  child: ListTile(
-                    leading: Icon(Icons.swap_horiz),
-                    title: Text('Registro 2'),
-                    subtitle: Text('Saida no valor de R\$ 500'),
-                  ),
-                ),
-              ],
+
+          Card(
+            child: StreamBuilder<QuerySnapshot>(
+              stream:
+                  FirebaseFirestore.instance.collection('users').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Erro: ${snapshot.error}'),
+                  );
+                }
+
+                final List<DocumentSnapshot> documents = snapshot.data!.docs;
+
+                return documents.isEmpty
+                    ? const Center(child: Text('Nenhum dado disponível.'))
+                    : ListView.builder(
+                        itemCount: documents.length,
+                        itemBuilder: (context, index) {
+                          final Map<String, dynamic> data =
+                              documents[index].data() as Map<String, dynamic>;
+
+                          return Card(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text('Descrição: ${data['descricao']}'),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Text('Valor: ${data['valor']}'),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Text('Tipo: ${data['selectedOption']}'),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+              },
             ),
           ),
 
-          /// Messages page
-          ListView.builder(
-              reverse: true,
-              itemCount: 1,
-              itemBuilder: (BuildContext context, int index) {
-                if (index == 0) {
-                  return Align(
-                    alignment: Alignment.center,
-                    child: Row(children: [
-                      Container(
-                        height: 40,
-                        width: 200,
-                        margin: const EdgeInsets.all(8.0),
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: TextField(
-                            controller: textEditingController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: false),
-                            inputFormatters: const [],
-                            style: const TextStyle(
-                              color: Colors.black,
-                            ),
-                            textAlign: TextAlign.center),
-                      ),
-                      ElevatedButton(
-                          onPressed: () => {},
-                          child: const Text(
-                            'CONFIRMAR',
-                          ))
-                    ]),
-                  );
-                }
-                return null;
-              })
+          SaldoWidget(saldo: saldo)
         ][currentPageIndex],
       ),
     );
